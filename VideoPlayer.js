@@ -427,9 +427,7 @@ export default class VideoPlayer extends Component {
      * Toggle playing state on <Video> component
      */
     _togglePlayPause() {
-        let state = this.state;
-        state.paused = ! state.paused;
-        this.setState( state );
+        this.setState({ paused: !this.state.paused });
     }
 
     /**
@@ -556,10 +554,8 @@ export default class VideoPlayer extends Component {
      * @param {float} time time to seek to in ms
      */
     seekTo( time = 0 ) {
-        let state = this.state;
-        state.currentTime = time;
         this.player.ref.seek( time );
-        this.setState( state );
+        this.setState( { currentTime: time } );
     }
 
     /**
@@ -670,6 +666,16 @@ export default class VideoPlayer extends Component {
         this.setState( state );
     }
 
+    componentDidUpdate(prevProps, prevState) {
+        if (prevState.paused && !this.state.paused && this.props.onPlay) {
+            const { duration, currentTime } = this.state;
+            this.props.onPlay({ duration, currentTime }); 
+        } else if (!prevState.paused && this.state.paused && this.props.onPause) {
+            const { duration, currentTime } = this.state;
+            this.props.onPause({ duration, currentTime }); 
+        }
+    }
+
     /**
      * When the component is about to unmount kill the
      * timeout less it fire in the prev/next scene
@@ -715,16 +721,15 @@ export default class VideoPlayer extends Component {
              */
             onPanResponderRelease: ( evt, gestureState ) => {
                 const time = this.calculateTimeFromSeekerPosition();
-                let state = this.state;
-                if ( time >= state.duration && ! state.loading ) {
-                    state.paused = true;
+                if ( time >= this.state.duration && !this.state.loading ) {
+                    this.setState({ paused: true });
                     this.events.onEnd();
                 } else {
                     this.seekTo( time );
+                    if (this.onSeek) this.onSeek({ duration: this.state.duration, currentTime: time });
                     this.setControlTimeout();
-                    state.seeking = false;
+                    this.setState({ seeking: false });
                 }
-                this.setState( state );
             }
         });
     }
@@ -924,8 +929,7 @@ export default class VideoPlayer extends Component {
             <Animated.View style={[
                 styles.controls.bottom,
                 {
-                    opacity: this.animations.bottomControl.opacity,
-                    marginBottom: this.animations.bottomControl.marginBottom,
+                    opacity: this.animations.bottomControl.opacity
                 }
             ]}>
                 <ImageBackground
@@ -1099,8 +1103,9 @@ export default class VideoPlayer extends Component {
 
                         source={ this.props.source }
                     />
+                    { this.props.renderMiddleLayer ? this.props.renderMiddleLayer() : null }
                     { this.renderError() }
-                    { this.renderTopControls() }
+                    { this.props.hideTopControls ? null : this.renderTopControls() }
                     { this.renderLoader() }
                     { this.renderBottomControls() }
                 </View>
