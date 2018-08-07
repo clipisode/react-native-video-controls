@@ -449,10 +449,10 @@ export default class VideoPlayer extends Component {
         state.paused = !state.paused;
 
         if (state.paused) {
-            typeof this.events.onPause === 'function' && this.events.onPause();
+            typeof this.events.onPause === 'function' && this.events.onPause({ duration, currentTime });
         }
         else {
-            typeof this.events.onPlay === 'function' && this.events.onPlay();
+            typeof this.events.onPlay === 'function' && this.events.onPlay({ duration, currentTime });
         }
 
         this.setState( state );
@@ -698,10 +698,10 @@ export default class VideoPlayer extends Component {
     componentDidUpdate(prevProps, prevState) {
         if (prevState.paused && !this.state.paused && this.props.onPlay) {
             const { duration, currentTime } = this.state;
-            this.props.onPlay({ duration, currentTime }); 
+            this.props.onPlay({ duration, currentTime });
         } else if (!prevState.paused && this.state.paused && this.props.onPause) {
             const { duration, currentTime } = this.state;
-            this.props.onPause({ duration, currentTime }); 
+            this.props.onPause({ duration, currentTime });
         }
     }
 
